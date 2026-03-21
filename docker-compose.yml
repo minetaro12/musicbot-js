@@ -1,0 +1,7 @@
+services:
+  bot:
+    build: .
+    restart: always
+    volumes:
+      - ./.env:/app/.env
+      # - ./cookies.txt:/app/cookies.txt
