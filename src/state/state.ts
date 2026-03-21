@@ -4,8 +4,20 @@ import { getAudioStream } from "../lib/getAudioStream.ts";
 import { client } from "../main.ts";
 import { TextChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
+import prism from "prism-media";
 
 export const GuildStates = new Map<string, State>();
+
+const FFMPEG_OPUS_ARGUMENTS = [
+  "-i", "-",
+  "-analyzeduration", "0",
+  "-loglevel", "0",
+  "-acodec", "libopus",
+  "-f", "opus",
+  "-ar", "48000",
+  "-ac", "2",
+  "-af", "loudnorm,volume=0.3" // 音量の正規化と全体の音量を下げるフィルター
+];
 
 export class State {
   notifyChannelId: string;
@@ -30,7 +42,7 @@ export class State {
     });
 
     // 再生中にエラーが発生したときの処理
-    this.player.on('error', error => {
+    this.player.on("error", error => {
       console.error(error);
       (client.channels.cache.get(this.notifyChannelId) as TextChannel).send({
         embeds: [
@@ -75,8 +87,16 @@ export class State {
     this.nowPlaying = next;
 
     const stream = await getAudioStream(next!.url);
-    const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary
+
+    // FFmpegでOpus形式に変換する&オーディオフィルターをかける
+    const transcoder = new prism.FFmpeg({
+      args: FFMPEG_OPUS_ARGUMENTS,
+    });
+
+    const convertedStream = stream.pipe(transcoder);
+
+    const resource = createAudioResource(convertedStream, {
+      inputType: StreamType.OggOpus
     });
     this.player.play(resource);
 
