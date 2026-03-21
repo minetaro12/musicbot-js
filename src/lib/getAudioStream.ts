@@ -10,7 +10,8 @@ export const getAudioStream = async (url: string) => {
     "--no-playlist",
     // "--quiet",
     // "--no-warnings",
-    "--buffer-size", "16K"
+    "--buffer-size", "16K",
+    "--js-runtimes", "node"
   ]);
 
   ytDlp.stderr.on("data", (data) => {

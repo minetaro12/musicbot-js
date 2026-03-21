@@ -10,6 +10,7 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
     ...getCookieOption(),
     // "--quiet",
     // "--no-warnings",
+    "--js-runtimes", "node"
   ]);
 
   ytDlp.stderr.on("data", (data) => {
