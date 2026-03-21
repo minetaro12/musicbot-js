@@ -3,6 +3,7 @@ import parse from "yargs-parser";
 import { createEmbed } from "../lib/createEmbed.ts";
 import { GuildStates } from "../state/state.ts";
 import { getStreamInfo } from "../lib/getStreamInfo.ts";
+import { joinHandler } from "./join.ts";
 
 export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const url = parse(message.content)._[1]?.toString();
@@ -20,18 +21,9 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
     return;
   }
 
-  // VCに参加しているサーバーかどうか
+  // VCに接続していない場合は参加する
   if (!GuildStates.has(message.guildId)) {
-    message.reply({
-      embeds: [
-        createEmbed({
-          title: "VCに接続していません",
-          color: "error"
-        })
-      ],
-      flags: ["SuppressNotifications"]
-    });
-    return;
+    joinHandler(message);
   }
 
   const state = GuildStates.get(message.guildId);
