@@ -62,6 +62,7 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
           color: "success"
         })
       ],
+      flags: ["SuppressNotifications"]
     });
   }
 };
