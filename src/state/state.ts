@@ -119,16 +119,6 @@ export class State {
       this.queue.splice(0, num - 1);
       this.player.stop();
     }
-
-    (client.channels.cache.get(this.notifyChannelId) as TextChannel).send({
-      embeds: [
-        createEmbed({
-          title: `${num}曲スキップしました`,
-          color: "info"
-        })
-      ],
-      flags: ["SuppressNotifications"]
-    });
   }
 
   destroy() {

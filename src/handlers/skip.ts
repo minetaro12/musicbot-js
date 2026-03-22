@@ -1,4 +1,4 @@
-import type { OmitPartialGroupDMChannel, Message } from "discord.js";
+import type { OmitPartialGroupDMChannel, Message, TextChannel } from "discord.js";
 import { GuildStates } from "../state/state.ts";
 import { createEmbed } from "../lib/createEmbed.ts";
 
@@ -22,4 +22,14 @@ export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
 
   const state = GuildStates.get(guildId);
   state.skip(num);
+
+  message.reply({
+    embeds: [
+      createEmbed({
+        title: `${num}曲スキップしました`,
+        color: "info"
+      })
+    ],
+    flags: ["SuppressNotifications"]
+  });
 };
