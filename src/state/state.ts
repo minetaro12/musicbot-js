@@ -106,7 +106,7 @@ export class State {
         createEmbed({
           title: "再生開始",
           description: next.title,
-          thumbnail_url: next.thumbnails[0]?.url || "",
+          thumbnail_url: (next.thumbnails && next.thumbnails[0].url) || "",
           color: "info"
         })
       ],
