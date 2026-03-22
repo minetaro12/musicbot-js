@@ -11,7 +11,6 @@ export const GuildStates = new Map<string, State>();
 const FFMPEG_OPUS_ARGUMENTS = [
   "-i", "-",
   "-analyzeduration", "0",
-  "-loglevel", "0",
   "-acodec", "libopus",
   "-f", "opus",
   "-ar", "48000",
