@@ -25,6 +25,7 @@ export class State {
   queue: Queue[];
   nowPlaying?: Queue;
   isPlaying = false;
+  playStartTime: number = 0;
 
   constructor(connection: VoiceConnection, notifyChannelId: string) {
     this.notifyChannelId = notifyChannelId;
@@ -97,6 +98,7 @@ export class State {
     const resource = createAudioResource(convertedStream, {
       inputType: StreamType.OggOpus
     });
+    this.playStartTime = Date.now();
     this.player.play(resource);
 
     (client.channels.cache.get(this.notifyChannelId) as TextChannel).send({
@@ -110,6 +112,22 @@ export class State {
       ],
       flags: ["SuppressNotifications"]
     });
+  }
+
+  getPlaybackProgress(): { current: number; total: number; percentage: number; } {
+    if (!this.nowPlaying?.duration) {
+      return { current: 0, total: 0, percentage: 0 };
+    }
+
+    const elapsed = (Date.now() - this.playStartTime) / 1000; // 秒単位
+    const total = this.nowPlaying.duration;
+    const current = Math.min(elapsed, total); // 総長を超えないようにする
+
+    return {
+      current,
+      total,
+      percentage: (current / total) * 100
+    };
   }
 
   skip(num: number) {

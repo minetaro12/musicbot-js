@@ -2,6 +2,8 @@ import type { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { GuildStates } from "../state/state.ts";
 import { createEmbed } from "../lib/createEmbed.ts";
 
+const BAR_LENGTH = 20;
+
 export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const guildId = message.guildId;
   let num = parseInt(message.content.split(" ")[1]) || 1;
@@ -25,6 +27,12 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
   const state = GuildStates.get(guildId);
 
   let description = `🎵 現在再生中: ${state.nowPlaying?.title || "なし"}\n\n`;
+
+  // プログレスバーの計算
+  const progress = state.getPlaybackProgress();
+  const progressBar = "▬".repeat(Math.floor(progress.percentage / 100 * BAR_LENGTH)) + "🔘" + "▬".repeat(BAR_LENGTH - Math.floor(progress.percentage / 100 * BAR_LENGTH));
+  description += `${progressBar} ${formatTime(progress.current)} / ${formatTime(progress.total)}\n\n`;
+
   if (state.queue.length === 0) {
     description += "再生リストは空です";
   } else {
@@ -39,7 +47,7 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
 
     description += `🗒️ 再生待ち (${num}/${totalPages}):\n`;
     state.queue.slice(startIndex, endIndex).forEach((item, index) => {
-      description += `${startIndex + index + 1}. ${item.title}\n`;
+      description += `${startIndex + index + 1}. ${item.title} (${formatTime(item.duration)})\n`;
     });
 
     description += `\n(全${state.queue.length}曲)\n`;
@@ -56,4 +64,10 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
     ],
     flags: ["SuppressNotifications"]
   });
+};
+
+const formatTime = (seconds: number): string => {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 };

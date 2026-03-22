@@ -6,7 +6,7 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
   const ytDlp = spawn("yt-dlp", [
     url,
     "--flat-playlist",
-    "--print", "%(.{title,url,thumbnails})j",
+    "--print", "%(.{title,url,thumbnails,duration})j",
     ...getCookieOption(),
     // "--quiet",
     // "--no-warnings",
@@ -32,7 +32,8 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
     return [{
       url: url,
       title: info.title,
-      thumbnails: info.thumbnails
+      thumbnails: info.thumbnails,
+      duration: info.duration
     }];
   }
 
