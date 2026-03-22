@@ -5,6 +5,7 @@ import { leaveHandler } from "./handlers/leave.ts";
 import { playHandler } from "./handlers/play.ts";
 import { listHandler } from "./handlers/list.ts";
 import { skipHandler } from "./handlers/skip.ts";
+import { helpHandler } from "./handlers/help.ts";
 
 // .env読み込み
 process.loadEnvFile("./.env");
@@ -50,6 +51,7 @@ client.on("messageCreate", (message) => {
       break;
     }
     case "help": {
+      helpHandler(message);
       break;
     }
     default: {
