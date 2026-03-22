@@ -5,7 +5,7 @@ export const getAudioStream = async (url: string) => {
   const ytDlp = spawn("yt-dlp", [
     url,
     "-o", "-",
-    "-f", "bestaudio",
+    "-f", "ba/b",
     ...getCookieOption(),
     "--no-playlist",
     // "--quiet",
