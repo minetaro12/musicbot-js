@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { ActivityType, Client, GatewayIntentBits } from "discord.js";
 import parser from "yargs-parser";
 import { joinHandler } from "./handlers/join.ts";
 import { leaveHandler } from "./handlers/leave.ts";
@@ -19,9 +19,20 @@ export const client = new Client({
   ]
 });
 
-
 client.on("clientReady", () => {
   console.log(`Logged in as ${client.user?.tag}!`);
+
+  const updateStatus = () => {
+    client.user?.setActivity({
+      name: `!help || ping: ${client.ws.ping}ms`,
+      type: ActivityType.Custom
+    });
+  };
+
+  updateStatus();
+
+  // 30秒ごとにステータスを更新
+  setInterval(updateStatus, 30000);
 });
 
 client.on("messageCreate", (message) => {
