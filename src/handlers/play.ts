@@ -7,7 +7,7 @@ import { joinHandler } from "./join.ts";
 import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
-  const url = parse(message.content)._[1]?.toString();
+  let url = parse(message.content)._[1]?.toString();
 
   if (!url) {
     message.reply({
@@ -26,6 +26,10 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
   if (!GuildStates.has(message.guildId)) {
     joinHandler(message);
   }
+
+  // URLがhttp、httpsで始まらない場合は検索ワードとみなす
+  // 50曲を検索するためにytsearch50:を付与する
+  url.startsWith("http://") || url.startsWith("https://") || (url = `ytsearch50:${url}`);
 
   const state = GuildStates.get(message.guildId);
 
