@@ -5,6 +5,7 @@ import { client } from "../main.ts";
 import { TextChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
 import prism from "prism-media";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const GuildStates = new Map<string, State>();
 
@@ -50,7 +51,8 @@ export class State {
             title: "再生中にエラーが発生しました",
             color: "error"
           })
-        ]
+        ],
+        ...DEFAULT_MESSAGE_OPTIONS
       });
 
       // スキップする
@@ -77,7 +79,7 @@ export class State {
             color: "info"
           })
         ],
-        flags: ["SuppressNotifications"]
+        ...DEFAULT_MESSAGE_OPTIONS
       });
       return;
     }
@@ -110,7 +112,7 @@ export class State {
           color: "info"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
   }
 

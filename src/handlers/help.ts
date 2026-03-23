@@ -1,4 +1,5 @@
 import type { Message, OmitPartialGroupDMChannel } from "discord.js";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const helpHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const helpMessage = `\`\`\`!join: ボイスチャンネルに参加します。
@@ -11,6 +12,6 @@ export const helpHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
 
   message.reply({
     content: helpMessage,
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 };

@@ -1,6 +1,7 @@
 import type { OmitPartialGroupDMChannel, Message, TextChannel } from "discord.js";
 import { GuildStates } from "../state/state.ts";
 import { createEmbed } from "../lib/createEmbed.ts";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const guildId = message.guildId;
@@ -15,7 +16,7 @@ export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -30,6 +31,6 @@ export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
         color: "info"
       })
     ],
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 };

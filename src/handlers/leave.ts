@@ -1,6 +1,7 @@
 import type { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
 import { GuildStates, State } from "../state/state.ts";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const leaveHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const guildId = message.guildId;
@@ -13,7 +14,7 @@ export const leaveHandler = (message: OmitPartialGroupDMChannel<Message<boolean>
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -27,7 +28,7 @@ export const leaveHandler = (message: OmitPartialGroupDMChannel<Message<boolean>
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -42,7 +43,7 @@ export const leaveHandler = (message: OmitPartialGroupDMChannel<Message<boolean>
         color: "success"
       })
     ],
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 
 };

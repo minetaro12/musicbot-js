@@ -4,6 +4,7 @@ import { createEmbed } from "../lib/createEmbed.ts";
 import { GuildStates } from "../state/state.ts";
 import { getStreamInfo } from "../lib/getStreamInfo.ts";
 import { joinHandler } from "./join.ts";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const url = parse(message.content)._[1]?.toString();
@@ -16,7 +17,7 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -36,7 +37,7 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
         color: "info"
       })
     ],
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 
   // 曲検索
@@ -50,7 +51,8 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
           title: "検索中にエラーが発生しました",
           color: "error"
         })
-      ]
+      ],
+      ...DEFAULT_MESSAGE_OPTIONS
     });
   } else {
     state.add(streamInfo);
@@ -62,7 +64,7 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
           color: "success"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
   }
 };

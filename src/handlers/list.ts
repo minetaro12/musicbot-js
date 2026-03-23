@@ -1,6 +1,7 @@
 import type { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { GuildStates } from "../state/state.ts";
 import { createEmbed } from "../lib/createEmbed.ts";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 const BAR_LENGTH = 20;
 
@@ -19,7 +20,7 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -62,7 +63,7 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
         color: "info"
       })
     ],
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 };
 

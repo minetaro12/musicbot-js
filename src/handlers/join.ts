@@ -2,6 +2,7 @@ import type { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
 import { joinVoiceChannel } from "@discordjs/voice";
 import { GuildStates, State } from "../state/state.ts";
+import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const voiceChannel = message.member?.voice.channel;
@@ -14,7 +15,7 @@ export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
           color: "error"
         })
       ],
-      flags: ["SuppressNotifications"]
+      ...DEFAULT_MESSAGE_OPTIONS
     });
     return;
   }
@@ -35,6 +36,6 @@ export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
         color: "success"
       })
     ],
-    flags: ["SuppressNotifications"]
+    ...DEFAULT_MESSAGE_OPTIONS
   });
 };
