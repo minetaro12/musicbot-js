@@ -3,6 +3,7 @@ import { createEmbed } from "../lib/createEmbed.ts";
 import { joinVoiceChannel } from "@discordjs/voice";
 import { GuildStates, State } from "../state/state.ts";
 import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
+import { BASE_URL } from "../main.ts";
 
 export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
   const voiceChannel = message.member?.voice.channel;
@@ -33,6 +34,7 @@ export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
     embeds: [
       createEmbed({
         title: `${voiceChannel.name}に接続しました`,
+        description: `${BASE_URL}/queue/?id=${message.guildId}&token=${GuildStates.get(message.guildId).token}`,
         color: "success"
       })
     ],

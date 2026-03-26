@@ -9,6 +9,12 @@ import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const GuildStates = new Map<string, State>();
 
+// トークン生成関数
+function generateToken(): string {
+  return Math.random().toString(36).substring(2, 15) +
+         Math.random().toString(36).substring(2, 15);
+}
+
 const FFMPEG_OPUS_ARGUMENTS = [
   "-i", "-",
   "-analyzeduration", "0",
@@ -27,12 +33,14 @@ export class State {
   nowPlaying?: Queue;
   isPlaying = false;
   playStartTime: number = 0;
+  token: string;
 
   constructor(connection: VoiceConnection, notifyChannelId: string) {
     this.notifyChannelId = notifyChannelId;
     this.connection = connection;
     this.player = new AudioPlayer();
     this.queue = [];
+    this.token = generateToken();
 
     this.connection.subscribe(this.player);
 

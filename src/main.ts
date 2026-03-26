@@ -1,4 +1,5 @@
 import { ActivityType, Client, GatewayIntentBits } from "discord.js";
+import express from "express";
 import parser from "yargs-parser";
 import { joinHandler } from "./handlers/join.ts";
 import { leaveHandler } from "./handlers/leave.ts";
@@ -6,6 +7,8 @@ import { playHandler } from "./handlers/play.ts";
 import { listHandler } from "./handlers/list.ts";
 import { skipHandler } from "./handlers/skip.ts";
 import { helpHandler } from "./handlers/help.ts";
+import indexRouter from "./routes/index.ts";
+import apiRouter from "./routes/api.ts";
 
 // .env読み込み
 process.loadEnvFile("./.env");
@@ -69,6 +72,19 @@ client.on("messageCreate", (message) => {
       break;
     }
   }
+});
+
+// expressサーバーのセットアップ
+const app = express();
+const PORT = process.env.PORT || 3000;
+export const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+
+app.use("/", indexRouter);
+app.use(express.static("public"));
+app.use("/api", apiRouter);
+
+app.listen(PORT, () => {
+  console.log(`Web UI is running on ${BASE_URL}`);
 });
 
 client.login(process.env.DISCORD_TOKEN);

@@ -8,4 +8,6 @@ RUN apk update && \
   chmod +x /usr/local/bin/yt-dlp && \
   pnpm install --only=production
 
+EXPOSE 3000
+
 ENTRYPOINT [ "node", "src/main.ts" ]

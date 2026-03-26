@@ -2,6 +2,7 @@ import type { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { GuildStates } from "../state/state.ts";
 import { createEmbed } from "../lib/createEmbed.ts";
 import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
+import { BASE_URL } from "../main.ts";
 
 const BAR_LENGTH = 20;
 
@@ -55,12 +56,19 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
     description += "ページを切り替えるには`!list <ページ番号>`を使用してください";
   }
 
+  const queueUrl = `${BASE_URL}/queue/?id=${guildId}&token=${state.token}`;
+
   message.reply({
     embeds: [
       createEmbed({
         title: "再生リスト",
         description: description,
         color: "info"
+      }),
+      createEmbed({
+        title: "📱 キューをウェブで見る",
+        description: queueUrl,
+        color: "success"
       })
     ],
     ...DEFAULT_MESSAGE_OPTIONS
