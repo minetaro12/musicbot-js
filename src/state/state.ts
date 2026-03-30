@@ -122,6 +122,7 @@ export class State {
       inputType: StreamType.OggOpus
     });
     this.playStartTime = Date.now();
+    this.nowPlaying.playStartTime = this.playStartTime;
     this.player.play(resource);
 
     // WebSocketでクライアントに再生開始を通知する
