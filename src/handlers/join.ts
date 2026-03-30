@@ -28,7 +28,7 @@ export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
     selfDeaf: true
   });
 
-  GuildStates.set(message.guildId, new State(conn, message.channelId));
+  GuildStates.set(message.guildId, new State(conn, message.channelId, message.guildId));
 
   message.reply({
     embeds: [

@@ -1,24 +1,16 @@
-const fetchQueue = async (id, token) => {
-  try {
-    const url = token ? `/api/${id}?token=${token}` : `/api/${id}`;
-    const res = await axios.get(url);
-    return res.data;
-  } catch (error) {
-    if (error.response?.status === 401) {
-      console.error("Authentication failed: Invalid or missing token");
-      return { error: "認証に失敗しました。トークンが無効です。" };
-    }
-    console.error("Error fetching queue:", error);
-    return null;
-  }
-};
+import { io } from "https://cdn.socket.io/4.8.3/socket.io.esm.min.js";
 
 const updateDisplay = (data) => {
   const currentDisplay = document.querySelector("#current");
   const queueDisplay = document.querySelector("#queue");
   const remainingDisplay = document.querySelector("#remaining");
 
-  currentDisplay.textContent = `${data.nowPlaying.title} (${formatTime(data.nowPlaying.duration)})` || "再生中の曲はありません";
+  if (data.nowPlaying) {
+    currentDisplay.textContent = `${data.nowPlaying.title} (${formatTime(data.nowPlaying.duration)})`;
+  } else {
+    currentDisplay.textContent = "再生中の曲はありません";
+  }
+
   queueDisplay.innerHTML = "";
   remainingDisplay.textContent = data.queue.length;
 
@@ -41,12 +33,25 @@ const urlParams = new URLSearchParams(window.location.search);
 const id = urlParams.get('id');
 const token = urlParams.get('token');
 
-const data = await fetchQueue(id, token);
+const socket = io({
+  auth: {
+    token: token,
+    guildId: id,
+  }
+});
 
-if (!data) {
-  alert("キュー情報を取得できませんでした。");
-} else if (data.error) {
-  alert(data.error);
-} else {
+socket.on("connect", () => {
+  console.log("Connected to server");
+});
+
+socket.on("disconnect", () => {
+  console.log("Disconnected from server");
+});
+
+socket.on("stateUpdate", (data) => {
   updateDisplay(data);
-}
+});
+
+socket.on("error", (err) => {
+  alert(err);
+});

@@ -1,7 +1,7 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioResource, StreamType, VoiceConnection } from "@discordjs/voice";
 import type { Queue } from "../type/queue.ts";
 import { getAudioStream } from "../lib/getAudioStream.ts";
-import { client } from "../main.ts";
+import { client, io } from "../main.ts";
 import { TextChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
 import prism from "prism-media";
@@ -12,7 +12,7 @@ export const GuildStates = new Map<string, State>();
 // トークン生成関数
 function generateToken(): string {
   return Math.random().toString(36).substring(2, 15) +
-         Math.random().toString(36).substring(2, 15);
+    Math.random().toString(36).substring(2, 15);
 }
 
 const FFMPEG_OPUS_ARGUMENTS = [
@@ -27,6 +27,7 @@ const FFMPEG_OPUS_ARGUMENTS = [
 
 export class State {
   notifyChannelId: string;
+  guildId: string;
   connection: VoiceConnection;
   player: AudioPlayer;
   queue: Queue[];
@@ -35,9 +36,8 @@ export class State {
   playStartTime: number = 0;
   token: string;
 
-  constructor(connection: VoiceConnection, notifyChannelId: string) {
-    this.notifyChannelId = notifyChannelId;
-    this.connection = connection;
+  constructor(connection: VoiceConnection, notifyChannelId: string, guildId: string) {
+    this.notifyChannelId = notifyChannelId; this.guildId = guildId; this.connection = connection;
     this.player = new AudioPlayer();
     this.queue = [];
     this.token = generateToken();
@@ -74,11 +74,18 @@ export class State {
     // 再生中でなければ再生する
     if (!this.isPlaying) {
       this.playNext();
+    } else {
+      // 再生中の場合は状態を通知
+      io.to(this.guildId).emit('stateUpdate', {
+        nowPlaying: this.nowPlaying,
+        queue: this.queue
+      });
     }
   }
 
   async playNext() {
     if (this.queue.length === 0) {
+      this.nowPlaying = undefined;
       this.isPlaying = false;
       (client.channels.cache.get(this.notifyChannelId) as TextChannel)?.send({
         embeds: [
@@ -89,6 +96,12 @@ export class State {
         ],
         ...DEFAULT_MESSAGE_OPTIONS
       });
+
+      io.to(this.guildId).emit('stateUpdate', {
+        nowPlaying: this.nowPlaying,
+        queue: this.queue
+      });
+
       return;
     }
 
@@ -110,6 +123,12 @@ export class State {
     });
     this.playStartTime = Date.now();
     this.player.play(resource);
+
+    // WebSocketでクライアントに再生開始を通知する
+    io.to(this.guildId).emit('stateUpdate', {
+      nowPlaying: this.nowPlaying,
+      queue: this.queue
+    });
 
     (client.channels.cache.get(this.notifyChannelId) as TextChannel).send({
       embeds: [
@@ -147,6 +166,12 @@ export class State {
       this.queue.splice(0, num - 1);
       this.player.stop();
     }
+
+    // スキップ後に状態を更新
+    io.to(this.guildId).emit('stateUpdate', {
+      nowPlaying: this.nowPlaying,
+      queue: this.queue
+    });
   }
 
   destroy() {

@@ -8,7 +8,9 @@ import { listHandler } from "./handlers/list.ts";
 import { skipHandler } from "./handlers/skip.ts";
 import { helpHandler } from "./handlers/help.ts";
 import indexRouter from "./routes/index.ts";
-import apiRouter from "./routes/api.ts";
+import http from "http";
+import { Server } from "socket.io";
+import { setupWebSocketHandlers } from "./handlers/websocket/setup.ts";
 
 // .env読み込み
 process.loadEnvFile("./.env");
@@ -81,9 +83,15 @@ export const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 
 app.use("/", indexRouter);
 app.use(express.static("public"));
-app.use("/api", apiRouter);
 
-app.listen(PORT, () => {
+// HTTPサーバーとSocket.IOのセットアップ
+const server = http.createServer(app);
+export const io = new Server(server);
+
+// Socket.IOハンドラーをセットアップ
+setupWebSocketHandlers(io);
+
+server.listen(PORT, () => {
   console.log(`Web UI is running on ${BASE_URL}`);
 });
 
