@@ -35,6 +35,7 @@ export class State {
   isPlaying = false;
   playStartTime: number = 0;
   token: string;
+  emptyChannelTimeout?: NodeJS.Timeout;
 
   constructor(connection: VoiceConnection, notifyChannelId: string, guildId: string) {
     this.notifyChannelId = notifyChannelId; this.guildId = guildId; this.connection = connection;
@@ -175,6 +176,38 @@ export class State {
       nowPlaying: this.nowPlaying,
       queue: this.queue
     });
+  }
+
+  startEmptyChannelTimer() {
+    // 既存のタイマーをクリア
+    if (this.emptyChannelTimeout) {
+      clearTimeout(this.emptyChannelTimeout);
+    }
+
+    // 15分後に自動切断
+    this.emptyChannelTimeout = setTimeout(() => {
+      this.destroy();
+      GuildStates.delete(this.guildId);
+
+      const textChannel = client.channels.cache.get(this.notifyChannelId) as TextChannel;
+      textChannel?.send({
+        embeds: [
+          createEmbed({
+            title: "15分間、ボットが VCに一人だったため切断しました",
+            color: "info"
+          })
+        ],
+        ...DEFAULT_MESSAGE_OPTIONS
+      });
+    }, 15 * 60 * 1000);
+  }
+
+  // VCにメンバーが戻ったときに呼び出す
+  cancelEmptyChannelTimer() {
+    if (this.emptyChannelTimeout) {
+      clearTimeout(this.emptyChannelTimeout);
+      this.emptyChannelTimeout = undefined;
+    }
   }
 
   destroy() {

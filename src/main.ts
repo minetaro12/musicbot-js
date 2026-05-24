@@ -11,6 +11,7 @@ import indexRouter from "./routes/index.ts";
 import http from "http";
 import { Server } from "socket.io";
 import { setupWebSocketHandlers } from "./handlers/websocket/setup.ts";
+import { GuildStates } from "./state/state.ts";
 
 // .env読み込み
 process.loadEnvFile("./.env");
@@ -73,6 +74,28 @@ client.on("messageCreate", (message) => {
     default: {
       break;
     }
+  }
+});
+
+// タイムアウト用
+client.on("voiceStateUpdate", (oldState, newState) => {
+  const guildId = newState.guild.id;
+  const voiceChannelId = newState.channelId || oldState.channelId;
+
+  if (!voiceChannelId) return;
+
+  const state = GuildStates.get(guildId);
+  if (!state) return;
+
+  const voiceChannel = client.channels.cache.get(voiceChannelId);
+  if (!voiceChannel || !voiceChannel.isVoiceBased()) return;
+
+  const memberCount = voiceChannel.members.filter(member => !member.user.bot).size;
+
+  if (memberCount === 0) {
+    state.startEmptyChannelTimer();
+  } else {
+    state.cancelEmptyChannelTimer();
   }
 });
 

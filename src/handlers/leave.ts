@@ -33,8 +33,13 @@ export const leaveHandler = (message: OmitPartialGroupDMChannel<Message<boolean>
     return;
   }
 
-  GuildStates.get(guildId)?.connection.disconnect();
+  const guildState = GuildStates.get(guildId);
+  if (!guildState) return;
+
+  guildState.cancelEmptyChannelTimer();
+  guildState.connection.disconnect();
   GuildStates.delete(guildId);
+
 
   message.reply({
     embeds: [
