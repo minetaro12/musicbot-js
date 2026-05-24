@@ -13,7 +13,7 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
   const ITEM_PER_PAGE = 10;
 
   // 接続中かどうか確かめる
-  if (!GuildStates.has(guildId)) {
+  if (!guildId || !GuildStates.has(guildId)) {
     message.reply({
       embeds: [
         createEmbed({
@@ -27,6 +27,9 @@ export const listHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
   }
 
   const state = GuildStates.get(guildId);
+  if (!state) {
+    return;
+  }
 
   let description = `🎵 現在再生中: ${state.nowPlaying?.title || "なし"}\n\n`;
 

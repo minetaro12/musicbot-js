@@ -33,9 +33,19 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
       url: url,
       title: info.title,
       thumbnails: info.thumbnails,
-      duration: info.duration
+      duration: info.duration,
+      playStartTime: null
     }];
   }
 
-  return lines.map(line => JSON.parse(line));
+  return lines.map(line => {
+    const info = JSON.parse(line);
+    return {
+      url: info.url,
+      title: info.title,
+      thumbnails: info.thumbnails,
+      duration: info.duration,
+      playStartTime: null
+    };
+  });
 };

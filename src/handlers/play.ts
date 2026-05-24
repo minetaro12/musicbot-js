@@ -23,6 +23,10 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
   }
 
   // VCに接続していない場合は参加する
+  if (!message.guildId) {
+    return;
+  }
+
   if (!GuildStates.has(message.guildId)) {
     joinHandler(message);
   }
@@ -32,6 +36,9 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
   url.startsWith("http://") || url.startsWith("https://") || (url = `ytsearch50:${url}`);
 
   const state = GuildStates.get(message.guildId);
+  if (!state) {
+    return;
+  }
 
   const msg = message.reply({
     embeds: [

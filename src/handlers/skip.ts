@@ -8,7 +8,7 @@ export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
   const num = parseInt(message.content.split(" ")[1]) || 1;
 
   // 接続中かどうか確かめる
-  if (!GuildStates.has(guildId)) {
+  if (!guildId || !GuildStates.has(guildId)) {
     message.reply({
       embeds: [
         createEmbed({
@@ -22,6 +22,10 @@ export const skipHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
   }
 
   const state = GuildStates.get(guildId);
+  if (!state) {
+    return;
+  }
+
   state.skip(num);
 
   message.reply({

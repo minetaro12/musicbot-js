@@ -28,13 +28,22 @@ export const joinHandler = (message: OmitPartialGroupDMChannel<Message<boolean>>
     selfDeaf: true
   });
 
+  if (!message.guildId || !message.channelId) {
+    return;
+  }
+
   GuildStates.set(message.guildId, new State(conn, message.channelId, message.guildId));
+
+  const state = GuildStates.get(message.guildId);
+  if (!state) {
+    return;
+  }
 
   message.reply({
     embeds: [
       createEmbed({
         title: `${voiceChannel.name}に接続しました`,
-        description: `${BASE_URL}/queue/?id=${message.guildId}&token=${GuildStates.get(message.guildId).token}`,
+        description: `${BASE_URL}/queue/?id=${message.guildId}&token=${state.token}`,
         color: "success"
       })
     ],
