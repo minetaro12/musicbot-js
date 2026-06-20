@@ -1,4 +1,5 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioResource, StreamType, VoiceConnection } from "@discordjs/voice";
+import type { ChildProcess } from "child_process";
 import type { Queue } from "../type/queue.ts";
 import { getAudioStream } from "../lib/getAudioStream.ts";
 import { client, io } from "../main.ts";
@@ -36,6 +37,7 @@ export class State {
   playStartTime: number = 0;
   token: string;
   emptyChannelTimeout?: NodeJS.Timeout;
+  ytDlpProcess?: ChildProcess;
 
   constructor(connection: VoiceConnection, notifyChannelId: string, guildId: string) {
     this.notifyChannelId = notifyChannelId; this.guildId = guildId; this.connection = connection;
@@ -110,7 +112,8 @@ export class State {
     const next = this.queue.shift();
     this.nowPlaying = next;
 
-    const stream = await getAudioStream(next!.url);
+    const { stream, process: ytDlpProcess } = await getAudioStream(next!.url);
+    this.ytDlpProcess = ytDlpProcess;
 
     // FFmpegでOpus形式に変換する&オーディオフィルターをかける
     const transcoder = new prism.FFmpeg({
@@ -164,6 +167,12 @@ export class State {
   }
 
   skip(num: number) {
+    // yt-dlpプロセスを強制終了
+    if (this.ytDlpProcess) {
+      this.ytDlpProcess.kill('SIGKILL');
+      this.ytDlpProcess = undefined;
+    }
+
     if (num == 1) {
       this.player.stop();
     } else {
@@ -211,6 +220,12 @@ export class State {
   }
 
   destroy() {
+    // yt-dlpプロセスを強制終了
+    if (this.ytDlpProcess) {
+      this.ytDlpProcess.kill('SIGKILL');
+      this.ytDlpProcess = undefined;
+    }
+
     this.player.stop();
     this.connection.destroy();
     this.queue = [];
