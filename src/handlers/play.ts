@@ -51,21 +51,24 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
     ...DEFAULT_MESSAGE_OPTIONS
   });
 
-  // 曲検索
-  const streamInfo = await getStreamInfo(url);
+  try {
+    const streamInfo = await getStreamInfo(url);
 
-  if (streamInfo.length === 0) {
-    msg.then((m) => m.delete());
-    message.reply({
-      embeds: [
-        createEmbed({
-          title: "検索中にエラーが発生しました",
-          color: "error"
-        })
-      ],
-      ...DEFAULT_MESSAGE_OPTIONS
-    });
-  } else {
+    if (streamInfo.length === 0) {
+      msg.then((m) => m.delete());
+      message.reply({
+        embeds: [
+          createEmbed({
+            title: "検索中にエラーが発生しました",
+            description: "検索結果が見つかりませんでした",
+            color: "error"
+          })
+        ],
+        ...DEFAULT_MESSAGE_OPTIONS
+      });
+      return;
+    }
+
     state.add(streamInfo);
     msg.then((m) => m.delete());
     message.reply({
@@ -73,6 +76,20 @@ export const playHandler = async (message: OmitPartialGroupDMChannel<Message<boo
         createEmbed({
           title: `${streamInfo.length}曲をキューに追加しました`,
           color: "success"
+        })
+      ],
+      ...DEFAULT_MESSAGE_OPTIONS
+    });
+  } catch (error) {
+    const description = error instanceof Error ? error.message : String(error);
+
+    msg.then((m) => m.delete());
+    message.reply({
+      embeds: [
+        createEmbed({
+          title: "検索中にエラーが発生しました",
+          description,
+          color: "error"
         })
       ],
       ...DEFAULT_MESSAGE_OPTIONS
