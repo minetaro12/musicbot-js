@@ -44,6 +44,9 @@ client.on("clientReady", () => {
 client.on("messageCreate", (message) => {
   if (message.author.bot) return;
 
+  // 先頭が ! でないメッセージは無視
+  if (!message.content.startsWith("!")) return;
+
   const args = parser(message.content);
 
   switch (args._[0]?.toString().split("!")[1]) {
