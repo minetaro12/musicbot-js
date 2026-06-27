@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . ./
 RUN apk update && \
   apk add --no-cache nodejs pnpm python3 ffmpeg && \
-  wget https://github.com/yt-dlp/yt-dlp/releases/download/2026.06.09/yt-dlp -O /usr/local/bin/yt-dlp && \
+  wget https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.06.26.234622/yt-dlp -O /usr/local/bin/yt-dlp && \
   chmod +x /usr/local/bin/yt-dlp && \
   pnpm install --only=production
 
