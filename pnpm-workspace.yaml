@@ -1,1 +1,2 @@
 allowBuilds:
+  '@discordjs/opus': false
