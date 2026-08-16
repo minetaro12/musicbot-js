@@ -50,8 +50,7 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
       url: url,
       title: info.title,
       thumbnails: info.thumbnails,
-      duration: info.duration,
-      playStartTime: null
+      duration: info.duration
     }];
   }
 
@@ -61,8 +60,7 @@ export const getStreamInfo = async (url: string): Promise<Queue[]> => {
       url: info.url,
       title: info.title,
       thumbnails: info.thumbnails,
-      duration: info.duration,
-      playStartTime: null
+      duration: info.duration
     };
   });
 };

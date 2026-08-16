@@ -1,7 +1,9 @@
-import { AudioPlayer, AudioPlayerStatus, createAudioResource, StreamType, VoiceConnection } from "@discordjs/voice";
+import { AudioPlayer, AudioPlayerStatus, createAudioResource, StreamType, VoiceConnection, type AudioResource } from "@discordjs/voice";
 import type { ChildProcess } from "child_process";
 import type { Queue } from "../type/queue.ts";
+import type { PlaybackProgress } from "../type/playback.ts";
 import { getAudioStream } from "../lib/getAudioStream.ts";
+import { calculatePlaybackProgress } from "../lib/playbackProgress.ts";
 import { client, io } from "../main.ts";
 import { TextChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
@@ -9,6 +11,12 @@ import prism from "prism-media";
 import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
 
 export const GuildStates = new Map<string, State>();
+
+export type StateUpdate = {
+  nowPlaying?: Queue;
+  queue: Queue[];
+  playback: PlaybackProgress;
+};
 
 // トークン生成関数
 function generateToken(): string {
@@ -34,7 +42,7 @@ export class State {
   queue: Queue[];
   nowPlaying?: Queue;
   isPlaying = false;
-  playStartTime: number = 0;
+  currentResource?: AudioResource;
   token: string;
   emptyChannelTimeout?: NodeJS.Timeout;
   ytDlpProcess?: ChildProcess;
@@ -50,7 +58,8 @@ export class State {
     // 曲が終わったときに次の曲を再生する
     this.player.on(AudioPlayerStatus.Idle, () => {
       this.isPlaying = false;
-      this.playNext();
+      this.currentResource = undefined;
+      void this.playNext();
     });
 
     // 再生中にエラーが発生したときの処理
@@ -79,10 +88,7 @@ export class State {
       this.playNext();
     } else {
       // 再生中の場合は状態を通知
-      io.to(this.guildId).emit('stateUpdate', {
-        nowPlaying: this.nowPlaying,
-        queue: this.queue
-      });
+      this.emitStateUpdate();
     }
   }
 
@@ -90,6 +96,7 @@ export class State {
     if (this.queue.length === 0) {
       this.nowPlaying = undefined;
       this.isPlaying = false;
+      this.currentResource = undefined;
       (client.channels.cache.get(this.notifyChannelId) as TextChannel)?.send({
         embeds: [
           createEmbed({
@@ -100,10 +107,7 @@ export class State {
         ...DEFAULT_MESSAGE_OPTIONS
       });
 
-      io.to(this.guildId).emit('stateUpdate', {
-        nowPlaying: this.nowPlaying,
-        queue: this.queue
-      });
+      this.emitStateUpdate();
 
       return;
     }
@@ -111,6 +115,7 @@ export class State {
     this.isPlaying = true;
     const next = this.queue.shift();
     this.nowPlaying = next;
+    this.emitStateUpdate();
 
     const { stream, process: ytDlpProcess } = await getAudioStream(next!.url);
     this.ytDlpProcess = ytDlpProcess;
@@ -125,17 +130,11 @@ export class State {
     const resource = createAudioResource(convertedStream, {
       inputType: StreamType.OggOpus
     });
-    this.playStartTime = Date.now();
-    if (this.nowPlaying) {
-      this.nowPlaying.playStartTime = this.playStartTime;
-    }
+    this.currentResource = resource;
     this.player.play(resource);
 
     // WebSocketでクライアントに再生開始を通知する
-    io.to(this.guildId).emit('stateUpdate', {
-      nowPlaying: this.nowPlaying,
-      queue: this.queue
-    });
+    this.emitStateUpdate();
 
     (client.channels.cache.get(this.notifyChannelId) as TextChannel).send({
       embeds: [
@@ -150,20 +149,24 @@ export class State {
     });
   }
 
-  getPlaybackProgress(): { current: number; total: number; percentage: number; } {
-    if (!this.nowPlaying?.duration) {
-      return { current: 0, total: 0, percentage: 0 };
-    }
+  getPlaybackProgress(): PlaybackProgress {
+    return calculatePlaybackProgress(
+      this.currentResource?.playbackDuration ?? 0,
+      this.nowPlaying?.duration ?? 0,
+      this.player.state.status === AudioPlayerStatus.Playing
+    );
+  }
 
-    const elapsed = (Date.now() - this.playStartTime) / 1000; // 秒単位
-    const total = this.nowPlaying.duration;
-    const current = Math.min(elapsed, total); // 総長を超えないようにする
-
+  getStateUpdate(): StateUpdate {
     return {
-      current,
-      total,
-      percentage: (current / total) * 100
+      nowPlaying: this.nowPlaying,
+      queue: this.queue,
+      playback: this.getPlaybackProgress()
     };
+  }
+
+  private emitStateUpdate() {
+    io.to(this.guildId).emit("stateUpdate", this.getStateUpdate());
   }
 
   skip(num: number) {
@@ -180,11 +183,6 @@ export class State {
       this.player.stop();
     }
 
-    // スキップ後に状態を更新
-    io.to(this.guildId).emit('stateUpdate', {
-      nowPlaying: this.nowPlaying,
-      queue: this.queue
-    });
   }
 
   startEmptyChannelTimer() {
@@ -230,5 +228,7 @@ export class State {
     this.connection.destroy();
     this.queue = [];
     this.nowPlaying = undefined;
+    this.currentResource = undefined;
+    this.isPlaying = false;
   }
 }

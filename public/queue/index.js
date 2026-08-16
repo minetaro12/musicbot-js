@@ -1,32 +1,34 @@
 import { io } from "https://cdn.socket.io/4.8.3/socket.io.esm.min.js";
+import { createPlaybackSnapshot, formatTime, getPlaybackPosition } from "./playback.js";
 
 let currentState = null;
-let updateProgressInterval = null; // interval ID を保存する変数
+let playbackSnapshot = {
+  current: 0,
+  total: 0,
+  percentage: 0,
+  isPlaying: false,
+  receivedAt: performance.now()
+};
+
+const setPlaybackSnapshot = (playback) => {
+  playbackSnapshot = createPlaybackSnapshot(playback, performance.now());
+};
+
+const getCurrentPlaybackPosition = () => {
+  return getPlaybackPosition(playbackSnapshot, performance.now());
+};
 
 const updateDisplay = (data) => {
-  if (updateProgressInterval) {
-    clearInterval(updateProgressInterval); // 既存の進捗更新をクリア
-  }
-
   const currentDisplay = document.querySelector("#current");
   const queueDisplay = document.querySelector("#queue");
   const remainingDisplay = document.querySelector("#remaining");
-  const progressBar = document.querySelector("#progress");
-  const progressText = document.querySelector("#progress-text");
 
   if (data.nowPlaying) {
     currentDisplay.textContent = data.nowPlaying.title;
-
-    progressBar.max = data.nowPlaying.duration;
-    progressBar.value = Math.ceil((Date.now() - data.nowPlaying.playStartTime) / 1000); // 秒単位に変換
-    progressText.textContent = `${formatTime(progressBar.value)}/${formatTime(progressBar.max)}`;
-
-    updateProgressInterval = setInterval(updateProgress, 1000); // 1秒ごとに進捗を更新
+    setPlaybackSnapshot(data.playback);
   } else {
     currentDisplay.textContent = "再生中の曲はありません";
-    progressBar.value = 0;
-    progressBar.max = 0;
-    progressText.textContent = `0:00/0:00`;
+    setPlaybackSnapshot(null);
   }
 
   queueDisplay.innerHTML = "";
@@ -40,26 +42,19 @@ const updateDisplay = (data) => {
   });
 };
 
-const updateProgress = () => {
+const renderProgress = () => {
   const progressBar = document.querySelector("#progress");
   const progressText = document.querySelector("#progress-text");
+  const current = getCurrentPlaybackPosition();
 
-  if (currentState.nowPlaying && progressBar.value < progressBar.max) {
-    progressBar.value += 1;
-    progressText.textContent = `${formatTime(progressBar.value)}/${formatTime(progressBar.max)}`;
-  } else {
-    clearInterval(updateProgressInterval); // 進捗更新を停止
-    progressBar.value = 0;
-    progressBar.max = 0;
-    progressText.textContent = `0:00/0:00`;
-  }
+  progressBar.max = playbackSnapshot.total;
+  progressBar.value = current;
+  progressText.textContent = `${formatTime(current)}/${formatTime(playbackSnapshot.total)}`;
+
+  requestAnimationFrame(renderProgress);
 };
 
-const formatTime = (seconds) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-};
+requestAnimationFrame(renderProgress);
 
 // クエリパラメーターからidとtokenを取得
 const urlParams = new URLSearchParams(window.location.search);
@@ -79,12 +74,23 @@ socket.on("connect", () => {
 
 socket.on("disconnect", () => {
   console.log("Disconnected from server");
+  setPlaybackSnapshot({
+    current: getCurrentPlaybackPosition(),
+    total: playbackSnapshot.total,
+    isPlaying: false
+  });
 });
 
 socket.on("stateUpdate", (data) => {
   console.log("State updated:", data);
   currentState = data;
   updateDisplay(currentState);
+});
+
+socket.on("playbackProgress", (playback) => {
+  if (currentState?.nowPlaying) {
+    setPlaybackSnapshot(playback);
+  }
 });
 
 socket.on("error", (err) => {
