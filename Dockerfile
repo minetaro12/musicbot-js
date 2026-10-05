@@ -1,10 +1,10 @@
-FROM alpine:3.24.1
+FROM alpine:3.24.2
 
 WORKDIR /app
 COPY . ./
 RUN apk update && \
   apk add --no-cache nodejs pnpm python3 ffmpeg && \
-  wget https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.08.30.232658/yt-dlp -O /usr/local/bin/yt-dlp && \
+  wget https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/download/2026.09.27.232945/yt-dlp -O /usr/local/bin/yt-dlp && \
   chmod +x /usr/local/bin/yt-dlp && \
   pnpm install --only=production
 
