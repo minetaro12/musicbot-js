@@ -1,7 +1,8 @@
 import { spawn, type ChildProcess } from "child_process";
 import { getCookieOption } from "./getCookieOption.ts";
+import type { Readable } from "node:stream";
 
-export const getAudioStream = async (url: string): Promise<{ stream: NodeJS.ReadableStream; process: ChildProcess }> => {
+export const getAudioStream = async (url: string): Promise<{ stream: Readable; process: ChildProcess }> => {
   const ytDlp = spawn("yt-dlp", [
     url,
     "-o", "-",

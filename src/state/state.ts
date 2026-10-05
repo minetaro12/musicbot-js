@@ -9,6 +9,8 @@ import { TextChannel } from "discord.js";
 import { createEmbed } from "../lib/createEmbed.ts";
 import prism from "prism-media";
 import { DEFAULT_MESSAGE_OPTIONS } from "../lib/messageOptions.ts";
+import { pipeline } from "node:stream";
+import { OpusBuffer } from "../lib/opusBuffer.ts";
 
 export const GuildStates = new Map<string, State>();
 
@@ -28,6 +30,7 @@ const FFMPEG_OPUS_ARGUMENTS = [
   "-i", "-",
   "-analyzeduration", "0",
   "-acodec", "libopus",
+  "-frame_duration", "20",
   "-f", "opus",
   "-ar", "48000",
   "-ac", "2",
@@ -47,10 +50,13 @@ export class State {
   token: string;
   emptyChannelTimeout?: NodeJS.Timeout;
   ytDlpProcess?: ChildProcess;
+  private cleanupAudio?: () => void;
+  private playbackGeneration = 0;
 
   constructor(connection: VoiceConnection, notifyChannelId: string, guildId: string) {
     this.notifyChannelId = notifyChannelId; this.guildId = guildId; this.connection = connection;
-    this.player = new AudioPlayer();
+    // Wait for the input to refill instead of skipping after five missing packets.
+    this.player = new AudioPlayer({ behaviors: { maxMissedFrames: Infinity } });
     this.queue = [];
     this.token = generateToken();
 
@@ -58,6 +64,7 @@ export class State {
 
     // 曲が終わったときに次の曲を再生する
     this.player.on(AudioPlayerStatus.Idle, () => {
+      this.cleanupAudio?.();
       this.isPlaying = false;
       this.currentResource = undefined;
       void this.playNext();
@@ -114,11 +121,17 @@ export class State {
     }
 
     this.isPlaying = true;
+    const generation = ++this.playbackGeneration;
     const next = this.queue.shift();
     this.nowPlaying = next;
     this.emitStateUpdate();
 
     const { stream, process: ytDlpProcess } = await getAudioStream(next!.url);
+    if (generation !== this.playbackGeneration) {
+      ytDlpProcess.kill('SIGKILL');
+      stream.destroy();
+      return;
+    }
     this.ytDlpProcess = ytDlpProcess;
 
     // FFmpegでOpus形式に変換する&オーディオフィルターをかける
@@ -126,13 +139,32 @@ export class State {
       args: FFMPEG_OPUS_ARGUMENTS,
     });
 
-    const convertedStream = stream.pipe(transcoder);
+    const demuxer = new prism.opus.OggDemuxer();
+    const bufferedStream = new OpusBuffer();
+    this.cleanupAudio = () => {
+      this.cleanupAudio = undefined;
+      this.ytDlpProcess = undefined;
+      ytDlpProcess.kill('SIGKILL');
+      stream.destroy();
+      transcoder.destroy();
+      demuxer.destroy();
+      bufferedStream.destroy();
+    };
+    ytDlpProcess.once("error", error => bufferedStream.destroy(error));
+    ytDlpProcess.once("close", (code, signal) => {
+      if (!bufferedStream.destroyed && (code !== 0 || signal)) {
+        bufferedStream.destroy(new Error(`yt-dlp exited: ${code ?? signal}`));
+      }
+    });
 
-    const resource = createAudioResource(convertedStream, {
-      inputType: StreamType.OggOpus
+    const resource = createAudioResource(bufferedStream, {
+      inputType: StreamType.Opus
     });
     this.currentResource = resource;
     this.player.play(resource);
+    pipeline(stream, transcoder, demuxer, bufferedStream, error => {
+      if (error && !bufferedStream.destroyed) bufferedStream.destroy(error);
+    });
 
     // WebSocketでクライアントに再生開始を通知する
     this.emitStateUpdate();
@@ -171,6 +203,8 @@ export class State {
   }
 
   skip(num: number) {
+    ++this.playbackGeneration;
+    this.cleanupAudio?.();
     // yt-dlpプロセスを強制終了
     if (this.ytDlpProcess) {
       this.ytDlpProcess.kill('SIGKILL');
@@ -178,10 +212,10 @@ export class State {
     }
 
     if (num == 1) {
-      this.player.stop();
+      this.player.stop(true);
     } else {
       this.queue.splice(0, num - 1);
-      this.player.stop();
+      this.player.stop(true);
     }
 
   }
@@ -219,6 +253,9 @@ export class State {
   }
 
   destroy() {
+    ++this.playbackGeneration;
+    this.queue = [];
+    this.cleanupAudio?.();
     // yt-dlpプロセスを強制終了
     if (this.ytDlpProcess) {
       this.ytDlpProcess.kill('SIGKILL');
