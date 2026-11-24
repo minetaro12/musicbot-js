@@ -8,3 +8,12 @@ services:
     volumes:
       - ./.env:/app/.env
       # - ./cookies.txt:/app/cookies.txt
+    environment:
+      - POT_PROVIDER_BASE_URL=http://pot-provider:4416
+    depends_on:
+      - pot-provider
+
+  pot-provider:
+    image: brainicism/bgutil-ytdlp-pot-provider:2.0.2
+    restart: always
+    init: true

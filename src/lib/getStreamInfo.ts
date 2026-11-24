@@ -1,13 +1,13 @@
 import { spawn } from "child_process";
 import type { Queue } from "../type/queue.ts";
-import { getCookieOption } from "./getCookieOption.ts";
+import { getYoutubeOptions } from "./getYoutubeOptions.ts";
 
 export const getStreamInfo = async (url: string): Promise<Queue[]> => {
   const ytDlp = spawn("yt-dlp", [
     url,
     "--flat-playlist",
     "--print", "%(.{title,url,thumbnails,duration})j",
-    ...getCookieOption(),
+    ...getYoutubeOptions(),
     // "--quiet",
     // "--no-warnings",
     "--js-runtimes", "node"

@@ -1,20 +1,16 @@
 import { spawn, type ChildProcess } from "child_process";
-import { getCookieOption } from "./getCookieOption.ts";
+import { getYoutubeOptions } from "./getYoutubeOptions.ts";
 
 export const getAudioStream = async (url: string): Promise<{ stream: NodeJS.ReadableStream; process: ChildProcess }> => {
   const ytDlp = spawn("yt-dlp", [
     url,
     "-o", "-",
 
-    // web_embedded の HLS を使用する
-    "--extractor-args",
-    "youtube:player_client=web_embedded",
-
-    // 音声付きHLSから低解像度を優先する
+    // mweb には HLS 144p がないため、音声のみ取得して帯域を節約
     "-f",
-    "b[protocol^=m3u8][height<=144]/b[protocol^=m3u8]",
+    "ba/b",
 
-    ...getCookieOption(),
+    ...getYoutubeOptions(),
     "--no-playlist",
     "--js-runtimes", "node"
   ]);
