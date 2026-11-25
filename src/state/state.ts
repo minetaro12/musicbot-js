@@ -31,8 +31,8 @@ const FFMPEG_OPUS_ARGUMENTS = [
   "-f", "opus",
   "-ar", "48000",
   "-ac", "2",
-  // 約1秒先読みし、冒頭から安定した小さめの音量に正規化する
-  "-af", "dynaudnorm=framelen=250:gausssize=9:peak=0.24:maxgain=3:targetrms=0.02:coupling=true:altboundary=true"
+  // 約1秒先読みし、冒頭から安定した音量に正規化する
+  "-af", "dynaudnorm=framelen=250:gausssize=9:maxgain=3:altboundary=true"
 ];
 
 export class State {
